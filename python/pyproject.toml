@@ -1,0 +1,70 @@
+[project]
+name = "web-crawler"
+version = "0.1.0"
+description = "Web crawler for python take home test."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "bandit>=1.9.3",
+    "coverage[toml]>=7.13.4",
+    "pytest>=9.0.2",
+    "ruff>=0.15.2",
+]
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+output-format = "pylint"
+extend-exclude = [
+    ".venv",
+]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+docstring-code-format = true
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "double"
+multiline-quotes = "double"
+docstring-quotes = "double"
+avoid-escape = true
+
+[tool.ruff.lint.mccabe]
+# Flag errors (`C901`) whenever the complexity level exceeds 5.
+max-complexity = 5
+
+[tool.coverage.run]
+branch = true
+source = [
+    "src/",
+]
+
+[tool.coverage.report]
+ignore_errors = true
+fail_under = 100
+exclude_also = [
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "if self\\.debug",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:",
+
+    # Don't complain about abstract methods, they aren't run:
+    "@(abc\\.)?abstractmethod",
+]
+omit = [
+    "tests/*",
+    ".venv/*",
+]
