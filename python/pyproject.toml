@@ -4,7 +4,11 @@ version = "0.1.0"
 description = "Web crawler for python take home test."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "httpx>=0.28.1",
+    "lxml>=6.0.2",
+]
 
 [dependency-groups]
 dev = [
