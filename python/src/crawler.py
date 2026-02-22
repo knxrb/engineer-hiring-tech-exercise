@@ -1,9 +1,9 @@
 import asyncio
-import warnings
 from http import HTTPStatus
-import httpx
+from warnings import filterwarnings
+
 from bs4 import BeautifulSoup, ResultSet, Tag, XMLParsedAsHTMLWarning
-from httpx import Timeout, AsyncClient, Response
+from httpx import Timeout, AsyncClient, Response, HTTPStatusError, Limits, TimeoutException
 
 from src.urlhelper import get_clean_url, get_domain, is_crawlable_url, from_relative_url
 
@@ -65,8 +65,8 @@ class Crawler:
                         await self._find_tags_in_response(page_url, response)
 
     def _create_async_client(self) -> AsyncClient:
-        return httpx.AsyncClient(
-            limits=httpx.Limits(
+        return AsyncClient(
+            limits=Limits(
                 max_connections=self._concurrency_limit,
             ),
         )
@@ -86,12 +86,12 @@ class Crawler:
                         content_type = content_type.split(';')[0]
                     return url, content_type.lower() == 'text/html'
 
-        except httpx.HTTPStatusError:
+        except HTTPStatusError:
             # This coding task: We'll silently fail this URL and continue crawling.
             # Normal circumstances: Log the exception and continue crawling with standard max attempts retry for this URL.
             pass
 
-        except httpx.TimeoutException:
+        except TimeoutException:
             # This coding task: We'll silently fail this URL and continue crawling.
             # Normal circumstances: Log the timeout and continue crawling with exponential backoff retry for this URL.
             pass
@@ -117,12 +117,12 @@ class Crawler:
                 if response.status_code == HTTPStatus.OK:
                     return url, response
 
-        except httpx.HTTPStatusError:
+        except HTTPStatusError:
             # This coding task: We'll silently fail this URL and continue crawling.
             # Normal circumstances: Log the exception and continue crawling with standard max attempts retry for this URL.
             pass
 
-        except httpx.TimeoutException:
+        except TimeoutException:
             # This coding task: We'll silently fail this URL and continue crawling.
             # Normal circumstances: Log the timeout and continue crawling with exponential backoff retry for this URL.
             pass
@@ -134,8 +134,8 @@ class Crawler:
 
         return url, None
 
-    async def _find_tags_in_response(self, page_url: str, response: httpx.Response) -> None:
-        warnings.filterwarnings('ignore', category=XMLParsedAsHTMLWarning)
+    async def _find_tags_in_response(self, page_url: str, response: Response) -> None:
+        filterwarnings('ignore', category=XMLParsedAsHTMLWarning)
         soup = BeautifulSoup(response.text, 'lxml')
         found_tags = soup.find_all(href=True)
         if found_tags:
