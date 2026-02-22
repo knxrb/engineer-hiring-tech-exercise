@@ -7,17 +7,17 @@ purple      () { printf "\e[35m" ; "$@" ; printf "\e[0m"; }
 lt_yellow   () { printf "\e[33m" ; "$@" ; printf "\e[0m"; }
 green       () { printf "\e[32m" ; "$@" ; printf "\e[0m"; }
 
-# Dependency and Security Checks
+# Dependency, Security, and Linting Checks
 lt_yellow echo 'Checking dependencies status.' && \
 uv lock --check
 
-echo && lt_yellow echo 'Bandit is checking for security issues.' && \
+echo && lt_yellow echo 'Checking for security issues (Bandit).' && \
 bandit -r -q . -x ./.venv --format screen
 
 echo && purple echo 'Checking for errors, potential problems, convention violations and complexity (Ruff).' && \
 uvx ruff check . && echo
 
-# Tests, Coverage, and Formatting Checks
+# Tests and Coverage Checks
 echo && purple echo 'Running unit tests and checking coverage:' && \
 tools/dev/coverage.sh
 
