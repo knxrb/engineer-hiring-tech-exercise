@@ -1,6 +1,6 @@
 import unittest
 
-from src.urlhelper import is_valid_url, is_same_domain, get_domain, get_clean_url, is_scrapeable_url, from_relative_url
+from src.urlhelper import is_valid_url, is_same_domain, get_domain, get_clean_url, is_crawlable_url, from_relative_url
 
 
 class UrlHelperTests(unittest.TestCase):
@@ -85,33 +85,33 @@ class UrlHelperTests(unittest.TestCase):
 
         self.assertEqual(cleaned_url, 'https://www.google.co.uk/a/path/goes/here')
 
-    def test_is_scrapeable_url__returns_true__for_valid_url_in_same_domain(self):
+    def test_is_crawlable_url__returns_true__for_valid_url_in_same_domain(self):
         url_to_test = 'https://www.google.com/a/path/goes/here/?id=ABC&something=else'
 
-        is_scrapeable = is_scrapeable_url(url_to_test, self._test_domain)
+        is_crawlable = is_crawlable_url(url_to_test, self._test_domain)
 
-        self.assertTrue(is_scrapeable)
+        self.assertTrue(is_crawlable)
 
-    def test_is_scrapeable_url__returns_false__for_valid_url_in_different_domain(self):
+    def test_is_crawlable_url__returns_false__for_valid_url_in_different_domain(self):
         url_to_test = 'https://www.yahoo.com/a/path/goes/here/?id=ABC&something=else'
 
-        is_scrapeable = is_scrapeable_url(url_to_test, self._test_domain)
+        is_crawlable = is_crawlable_url(url_to_test, self._test_domain)
 
-        self.assertFalse(is_scrapeable)
+        self.assertFalse(is_crawlable)
 
-    def test_is_scrapeable_url__returns_false__for_valid_url_in_different_subdomain(self):
+    def test_is_crawlable_url__returns_false__for_valid_url_in_different_subdomain(self):
         url_to_test = 'https://analytics.google.com/a/path/goes/here/?id=ABC&something=else'
 
-        is_scrapeable = is_scrapeable_url(url_to_test, self._test_domain)
+        is_crawlable = is_crawlable_url(url_to_test, self._test_domain)
 
-        self.assertFalse(is_scrapeable)
+        self.assertFalse(is_crawlable)
 
-    def test_is_scrapeable_url__returns_false__for_no_url(self):
+    def test_is_crawlable_url__returns_false__for_no_url(self):
         url_to_test = None
 
-        is_scrapeable = is_scrapeable_url(url_to_test, self._test_domain)
+        is_crawlable = is_crawlable_url(url_to_test, self._test_domain)
 
-        self.assertFalse(is_scrapeable)
+        self.assertFalse(is_crawlable)
 
     def test_from_relative_url__returns_full_url__for_path(self):
         origin_url = 'https://www.google.com/a/path/here'

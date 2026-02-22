@@ -5,8 +5,8 @@ from src.crawler import Crawler
 
 
 async def main(url: str):
-    crawler = Crawler(url)
-    await crawler.run()
+    crawler = Crawler()
+    await crawler.run(url)
 
 
 if __name__ == '__main__':

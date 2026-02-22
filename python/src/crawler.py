@@ -5,12 +5,13 @@ import httpx
 from bs4 import BeautifulSoup, ResultSet, Tag, XMLParsedAsHTMLWarning
 from httpx import Timeout, AsyncClient, Response
 
-from src.urlhelper import get_clean_url, get_domain, is_scrapeable_url, from_relative_url
+from src.urlhelper import get_clean_url, get_domain, is_crawlable_url, from_relative_url
 
 
 class Crawler:
-    _concurrency_limit: int
-    _base_domain: str
+    _concurrency_limit: int = 10
+    _initial_url: str = None
+    _base_domain: str = None
 
     _client_headers: dict = {'User-Agent': 'Crawler 0.1.0'}
     _client_timeout: Timeout = Timeout(10)
@@ -22,33 +23,36 @@ class Crawler:
 
     _output: list[str] = []
 
-    def __init__(self, initial_url: str, concurrency_limit: int = 10) -> None:
+    async def run(self, initial_url: str, concurrency_limit: int = 10) -> None:
+        """
+        Runs the crawler to crawl the initial URL and any URLs
+        it finds until all pages are checked.
+        Valid pages for crawling are defined by the content type
+        of the response (HEAD request), which must be 'text/html'.
+
+        Args:
+            initial_url: The initial URL to start crawling from.
+            concurrency_limit: The maximum number of concurrent
+                requests to the domain. Defaults to 10.
+        """
         self._initial_url = initial_url
         self._base_domain = get_domain(initial_url)
         self._concurrency_limit = concurrency_limit
         self._limiter = asyncio.Semaphore(concurrency_limit)
 
-    def create_async_client(self) -> AsyncClient:
-        return httpx.AsyncClient(
-            limits=httpx.Limits(
-                max_connections=self._concurrency_limit,
-            ),
-        )
+        self._queue.add(initial_url)
 
-    async def run(self) -> None:
-        self._queue.add(self._initial_url)
-
-        async with self.create_async_client() as client:
+        async with self._create_async_client() as client:
             while True:
                 if not self._queue:
                     break
 
-                checked_urls = await asyncio.gather(*[self.check_content_type(client, url) for url in self._queue])
+                checked_urls = await asyncio.gather(*[self._check_content_type(client, url) for url in self._queue])
 
                 requests = []
                 for url, is_valid_content in checked_urls:
                     if is_valid_content:
-                        requests.append(self.make_request(client, url))
+                        requests.append(self._make_request(client, url))
 
                     else:
                         self._seen.add(url)
@@ -58,9 +62,16 @@ class Crawler:
 
                 for page_url, response in responses:
                     if response is not None:
-                        await self.find_tags_in_response(page_url, response)
+                        await self._find_tags_in_response(page_url, response)
 
-    async def check_content_type(self, client: AsyncClient, url: str) -> tuple[str, bool]:
+    def _create_async_client(self) -> AsyncClient:
+        return httpx.AsyncClient(
+            limits=httpx.Limits(
+                max_connections=self._concurrency_limit,
+            ),
+        )
+
+    async def _check_content_type(self, client: AsyncClient, url: str) -> tuple[str, bool]:
         # noinspection PyBroadException
         try:
             async with self._limiter:
@@ -92,7 +103,7 @@ class Crawler:
 
         return url, True
 
-    async def make_request(self, client: AsyncClient, url: str) -> tuple[str, Response | None]:
+    async def _make_request(self, client: AsyncClient, url: str) -> tuple[str, Response | None]:
         self._queue.discard(url)
 
         # noinspection PyBroadException
@@ -123,28 +134,28 @@ class Crawler:
 
         return url, None
 
-    async def find_tags_in_response(self, page_url: str, response: httpx.Response) -> None:
+    async def _find_tags_in_response(self, page_url: str, response: httpx.Response) -> None:
         warnings.filterwarnings('ignore', category=XMLParsedAsHTMLWarning)
         soup = BeautifulSoup(response.text, 'lxml')
         found_tags = soup.find_all(href=True)
         if found_tags:
-            await self.get_urls_for_found_tags(page_url, found_tags)
+            await self._get_urls_for_found_tags(page_url, found_tags)
 
-    async def get_urls_for_found_tags(self, page_url: str, found_tags: ResultSet[Tag]) -> None:
+    async def _get_urls_for_found_tags(self, page_url: str, found_tags: ResultSet[Tag]) -> None:
         print(page_url)
         for tag in found_tags:
             found_url = tag.get('href', None)
-            if not await self.add_to_queue(found_url):
-                await self.check_for_relative_url(page_url, found_url)
+            if not await self._add_to_queue(found_url):
+                await self._check_for_relative_url(page_url, found_url)
 
-    async def check_for_relative_url(self, page_url: str, found_url: str) -> None:
+    async def _check_for_relative_url(self, page_url: str, found_url: str) -> None:
         if found_url and found_url[0] == '/' or (len(found_url) > 1 and found_url[0:2] == './'):
             full_url = from_relative_url(page_url, found_url)
-            await self.add_to_queue(full_url)
+            await self._add_to_queue(full_url)
 
-    async def add_to_queue(self, url: str) -> bool:
+    async def _add_to_queue(self, url: str) -> bool:
         clean_url = get_clean_url(url)
-        if not is_scrapeable_url(clean_url, self._base_domain):
+        if not is_crawlable_url(clean_url, self._base_domain):
             return False
 
         if clean_url not in self._seen:
