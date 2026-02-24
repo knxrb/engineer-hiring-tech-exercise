@@ -1,5 +1,94 @@
 # python-developer-test
 
+## IDE and Tools
+- I used `Jetbrains PyCharm` version 2025.3.2.1 for the development.
+- I have the `JetBrains AI Assistant`, but I chose not to use it for this project.
+
+## Project Setup
+My choice of language version, tools, and libraries for the project are:
+- `Python 3.12+` (3.12.12)
+- `UV` for dependency management.
+- `Ruff` for linting and formatting.
+- `Bandit` for a first layer of security checks (I expect further security checks would happen in PR
+processes and CI/CD pipelines).
+- `pytest` and `coverage` for testing and code coverage metrics.
+
+I set the project up to use `pyproject.toml` for a majority of the configuration, with some
+specific configuration options specified in script commands used in my `tools/dev` scripts.
+
+I created a `pre_push.sh` script to simplify the running of `uv`, `bandit`, and `ruff` checks,
+along with unit tests and coverage metrics before pushing to the remote repository.
+
+By using `pyproject.toml` and dev scripts it also means that in a team we're all running the same
+checks and standardizing on the same configuration. The `pre_push.sh` script can optionally be
+configured as a git pre-push hook, if desired.
+
+The project setup includes a virtual environment, defaulting to the `.venv` directory (in the
+project root and excluded from version control), ensuring everyone is using a project-specific environment
+based on the project configuration.
+
+## Project Requirements
+- [Complete] Create a web crawler that will crawl a single domain and print out the URL of the page it is
+crawling followed by the URLs it finds on that page.
+- [Complete] The crawler will only process URLs for the same domain as the initially provided URL, ignoring
+other domains and subdomains.
+- [Partially] The crawler should run as quickly as possible, while not reducing accuracy or requiring
+significant compute resources.
+- [Complete] Tools that already do web crawling, such as Scrapy, cannot be used.
+- [Complete] Tools that assist with functionality, such as HTML parsing, are allowed.
+
+## Improvements
+Some improvements I would like to make in the future for this kind of project include:
+- Add a proper rate-limiting mechanism to prevent the crawler making too many requests too quickly.
+  - The one I've got at the moment meets basic requirements, however, being able to limit to a number of requests
+  per second properly would be more effective.
+- Add detection and parsing of the robots.txt file to adjust rate limits as per the site policies and exclude
+specific URLs.
+- Add full error handling for the different Exceptions that can be raised, with proper feedback to the user if any
+unresolvable errors occurred.
+- Add detection and parsing of the sitemap.xml file to crawl URLs that can't be accessed from another page.
+- Finish the unit testing to make sure all the critical areas are tested and increase the coverage to the
+required level.
+- Add support for handling redirects to only crawl the latest version of a page.
+- Add support for multiple domains, by moving the existing `Crawler` class out to a new `Spider` class and adding
+logic to the `Crawler` class to create a `Spider` for each domain, with its own rate limits.
+- Add a proper output mechanism to have result output to a structured file or database, instead of printing to the CLI,
+as the CLI output is largely useless and unwieldy in this kind of scenario unless you're piping the output to another
+CLI tool for filtering/transformation, or other processing.
+
+## In Hindsight
+### What went well?
+- I've gotten the main functionality working with clear modular functions that are easy to maintain long-term, with
+ docstring comments for the public functions.
+- I chose to perform HEAD requests for each URL to check the declared content-type header before making a GET request
+to the valid content for crawling, this helps with reducing bandwidth usage and avoiding unnecessary requests to pages
+that are not `text/html`.
+  - This would also ideally be expanded with additional filtering based on other (currently unknown) project
+  requirements, such as using URL filtering to completely ignore image files if there is no requirement to crawl
+  potentially hidden content.
+- The number of HTTP requests are limited by default to a maximum of 10 at a time which helps with rate limiting
+to an initial level, until further improvements are made.
+- I was also able to get some unit testing in place for some of the logic, showing the way I like to structure
+and write my unit tests.
+
+### What could have gone better?
+During the development I was definitely overthinking what you were wanting to see, and that resulted in unnecessary
+time spent on refactoring and rewriting parts. Doing this again, I would spend the first 10-15 minutes deciding on a
+strategy and then stick to it for the duration, unless something significantly wrong was discovered with my original
+choice.
+
+In a scenario with less time constraint, I would also have done TDD, so the logic is tested as I develop it.
+
+Using an AI tool would definitely have meant faster progress with more time to finish unit tests and other in-progress
+aspects of the project, however, that would also have obfuscated my mindset and approach to the tasks and so may not be
+suitable for use here.
+
+---
+
+---
+
+---
+
 # Zego
 
 ## About Us
