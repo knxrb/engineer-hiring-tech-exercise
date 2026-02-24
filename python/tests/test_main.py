@@ -7,6 +7,11 @@ from pytest_httpx import HTTPXMock
 from src.crawler import Crawler
 
 
+def _setup_test_client(crawler: Crawler) -> httpx.AsyncClient:
+    crawler._limiter = asyncio.Semaphore(1)
+    return crawler._create_async_client()
+
+
 def test_create_async_client__returns__httpx_async_client():
     crawler = Crawler()
 
@@ -16,13 +21,15 @@ def test_create_async_client__returns__httpx_async_client():
 
 
 @pytest.mark.asyncio
-@pytest.mark.httpx_mock(assert_all_responses_were_requested=False)
+@pytest.mark.httpx_mock()
 async def test_check_content_type__html_is_valid_for_crawling(httpx_mock: HTTPXMock):
-    httpx_mock.add_response(status_code=200, headers={"Content-Type": "text/html; charset=utf-8"})
+    httpx_mock.add_response(
+        status_code=200,
+        headers={"Content-Type": "text/html; charset=utf-8"}
+    )
 
     crawler = Crawler()
-    crawler._limiter = asyncio.Semaphore(1)
-    client = crawler._create_async_client()
+    client = _setup_test_client(crawler)
 
     result = await crawler._check_content_type(client, 'https://www.domain.com/html')
 
@@ -30,13 +37,15 @@ async def test_check_content_type__html_is_valid_for_crawling(httpx_mock: HTTPXM
     assert result[1] is True  # nosec B101
 
 @pytest.mark.asyncio
-@pytest.mark.httpx_mock(assert_all_responses_were_requested=False)
+@pytest.mark.httpx_mock()
 async def test_check_content_type__svg_is_not_valid_for_crawling(httpx_mock: HTTPXMock):
-    httpx_mock.add_response(status_code=200, headers={"Content-Type": "image/svg+xml; charset=utf-8"})
+    httpx_mock.add_response(
+        status_code=200,
+        headers={"Content-Type": "image/svg+xml; charset=utf-8"}
+    )
 
     crawler = Crawler()
-    crawler._limiter = asyncio.Semaphore(1)
-    client = crawler._create_async_client()
+    client = _setup_test_client(crawler)
 
     result = await crawler._check_content_type(client, 'https://www.domain.com/svg')
 
@@ -44,13 +53,15 @@ async def test_check_content_type__svg_is_not_valid_for_crawling(httpx_mock: HTT
     assert result[1] is False  # nosec B101
 
 @pytest.mark.asyncio
-@pytest.mark.httpx_mock(assert_all_responses_were_requested=False)
+@pytest.mark.httpx_mock()
 async def test_check_content_type__failure_defaults_to_valid_for_crawling(httpx_mock: HTTPXMock):
-    httpx_mock.add_response(status_code=500, headers={"Content-Type": "image/svg+xml; charset=utf-8"})
+    httpx_mock.add_response(
+        status_code=500,
+        headers={"Content-Type": "image/svg+xml; charset=utf-8"}
+    )
 
     crawler = Crawler()
-    crawler._limiter = asyncio.Semaphore(1)
-    client = crawler._create_async_client()
+    client = _setup_test_client(crawler)
 
     result = await crawler._check_content_type(client, 'https://www.domain.com/failed')
 
